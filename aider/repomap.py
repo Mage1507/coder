@@ -25,10 +25,6 @@ Tag = namedtuple("Tag", "rel_fname fname line name kind".split())
 
 
 class RepoMap:
-    CACHE_VERSION = 3
-    TAGS_CACHE_DIR = f".aider.tags.cache.v{CACHE_VERSION}"
-
-    cache_missing = False
 
     warned_files = set()
 
@@ -50,8 +46,6 @@ class RepoMap:
             root = os.getcwd()
         self.root = root
 
-        self.load_tags_cache()
-
         self.max_map_tokens = map_tokens
         self.map_mul_no_files = map_mul_no_files
         self.max_context_window = max_context_window
@@ -59,7 +53,9 @@ class RepoMap:
         self.token_count = main_model.token_count
         self.repo_content_prefix = repo_content_prefix
 
-    def get_repo_map(self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None):
+    def get_repo_map(
+        self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
+    ):
         if self.max_map_tokens <= 0:
             return
         if not other_files:
@@ -85,7 +81,11 @@ class RepoMap:
 
         try:
             files_listing = self.get_ranked_tags_map(
-                chat_files, other_files, max_map_tokens, mentioned_fnames, mentioned_idents
+                chat_files,
+                other_files,
+                max_map_tokens,
+                mentioned_fnames,
+                mentioned_idents,
             )
         except RecursionError:
             self.io.tool_error("Disabling repo map, git repo too large?")
@@ -120,15 +120,6 @@ class RepoMap:
         path = os.path.relpath(path, self.root)
         return [path + ":"]
 
-    def load_tags_cache(self):
-        path = Path(self.root) / self.TAGS_CACHE_DIR
-        if not path.exists():
-            self.cache_missing = True
-        self.TAGS_CACHE = Cache(path)
-
-    def save_tags_cache(self):
-        pass
-
     def get_mtime(self, fname):
         try:
             return os.path.getmtime(fname)
@@ -141,17 +132,10 @@ class RepoMap:
         if file_mtime is None:
             return []
 
-        cache_key = fname
-        if cache_key in self.TAGS_CACHE and self.TAGS_CACHE[cache_key]["mtime"] == file_mtime:
-            return self.TAGS_CACHE[cache_key]["data"]
-
         # miss!
 
         data = list(self.get_tags_raw(fname, rel_fname))
 
-        # Update the cache
-        self.TAGS_CACHE[cache_key] = {"mtime": file_mtime, "data": data}
-        self.save_tags_cache()
         return data
 
     def get_tags_raw(self, fname, rel_fname):
@@ -225,7 +209,9 @@ class RepoMap:
                 line=-1,
             )
 
-    def get_ranked_tags(self, chat_fnames, other_fnames, mentioned_fnames, mentioned_idents):
+    def get_ranked_tags(
+        self, chat_fnames, other_fnames, mentioned_fnames, mentioned_idents
+    ):
         import networkx as nx
 
         defines = defaultdict(set)
@@ -243,10 +229,6 @@ class RepoMap:
         # https://networkx.org/documentation/stable/_modules/networkx/algorithms/link_analysis/pagerank_alg.html#pagerank
         personalize = 100 / len(fnames)
 
-        if self.cache_missing:
-            fnames = tqdm(fnames)
-        self.cache_missing = False
-
         for fname in fnames:
             if not Path(fname).is_file():
                 if fname not in self.warned_files:
@@ -255,7 +237,9 @@ class RepoMap:
                             f"Repo-map can't include {fname}, it is not a normal file"
                         )
                     else:
-                        self.io.tool_error(f"Repo-map can't include {fname}, it no longer exists")
+                        self.io.tool_error(
+                            f"Repo-map can't include {fname}, it no longer exists"
+                        )
 
                 self.warned_files.add(fname)
                 continue
@@ -332,7 +316,9 @@ class RepoMap:
         ranked_definitions = defaultdict(float)
         for src in G.nodes:
             src_rank = ranked[src]
-            total_weight = sum(data["weight"] for _src, _dst, data in G.out_edges(src, data=True))
+            total_weight = sum(
+                data["weight"] for _src, _dst, data in G.out_edges(src, data=True)
+            )
             # dump(src, src_rank, total_weight)
             for _src, dst, data in G.out_edges(src, data=True):
                 data["rank"] = src_rank * data["weight"] / total_weight
@@ -340,7 +326,9 @@ class RepoMap:
                 ranked_definitions[(dst, ident)] += data["rank"]
 
         ranked_tags = []
-        ranked_definitions = sorted(ranked_definitions.items(), reverse=True, key=lambda x: x[1])
+        ranked_definitions = sorted(
+            ranked_definitions.items(), reverse=True, key=lambda x: x[1]
+        )
 
         # dump(ranked_definitions)
 
@@ -350,11 +338,15 @@ class RepoMap:
                 continue
             ranked_tags += list(definitions.get((fname, ident), []))
 
-        rel_other_fnames_without_tags = set(self.get_rel_fname(fname) for fname in other_fnames)
+        rel_other_fnames_without_tags = set(
+            self.get_rel_fname(fname) for fname in other_fnames
+        )
 
         fnames_already_included = set(rt[0] for rt in ranked_tags)
 
-        top_rank = sorted([(rank, node) for (node, rank) in ranked.items()], reverse=True)
+        top_rank = sorted(
+            [(rank, node) for (node, rank) in ranked.items()], reverse=True
+        )
         for rank, fname in top_rank:
             if fname in rel_other_fnames_without_tags:
                 rel_other_fnames_without_tags.remove(fname)
@@ -510,7 +502,9 @@ def get_random_color():
 def get_scm_fname(lang):
     # Load the tags queries
     try:
-        return resources.files(__package__).joinpath("queries", f"tree-sitter-{lang}-tags.scm")
+        return resources.files(__package__).joinpath(
+            "queries", f"tree-sitter-{lang}-tags.scm"
+        )
     except KeyError:
         return
 
