@@ -698,8 +698,8 @@ class Coder:
             while True:
                 try:
                     user_message = self.get_input()
-                    if user_message == "/agent-401":
-                        return
+                    if user_message == "/task":
+                        return "interactivechat"
                     self.run_one(user_message, preproc)
                     self.show_undo_hint()
                 except KeyboardInterrupt:
