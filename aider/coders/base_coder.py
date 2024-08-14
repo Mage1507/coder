@@ -1629,6 +1629,9 @@ class Coder:
                 seen[path] = allowed
 
             if allowed:
+                if not self.io.confirm_ask(f"Apply edit to {path}?"):
+                    self.io.tool_error(f"Skipping edit to {path}")
+                    continue
                 res.append(edit)
 
         self.dirty_commit()
@@ -1669,12 +1672,6 @@ class Coder:
 
             self.reflected_message = str(err)
             return
-
-        for path in edited:
-            if self.dry_run:
-                self.io.tool_output(f"Did not apply edit to {path} (--dry-run)")
-            else:
-                self.io.tool_output(f"Applied edit to {path}")
 
         return edited
 
