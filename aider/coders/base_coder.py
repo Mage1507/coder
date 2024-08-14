@@ -114,13 +114,19 @@ class Coder:
             # confused the new LLM. It may try and imitate it, disobeying
             # the system prompt.
             done_messages = from_coder.done_messages
-            if edit_format != from_coder.edit_format and done_messages and summarize_from_coder:
+            if (
+                edit_format != from_coder.edit_format
+                and done_messages
+                and summarize_from_coder
+            ):
                 done_messages = from_coder.summarizer.summarize_all(done_messages)
 
             # Bring along context from the old Coder
             update = dict(
                 fnames=list(from_coder.abs_fnames),
-                read_only_fnames=list(from_coder.abs_read_only_fnames),  # Copy read-only files
+                read_only_fnames=list(
+                    from_coder.abs_read_only_fnames
+                ),  # Copy read-only files
                 done_messages=done_messages,
                 cur_messages=from_coder.cur_messages,
                 aider_commit_hashes=from_coder.aider_commit_hashes,
@@ -335,7 +341,9 @@ class Coder:
                 if os.path.exists(abs_fname):
                     self.abs_read_only_fnames.add(abs_fname)
                 else:
-                    self.io.tool_error(f"Error: Read-only file {fname} does not exist. Skipping.")
+                    self.io.tool_error(
+                        f"Error: Read-only file {fname} does not exist. Skipping."
+                    )
 
         if map_tokens is None:
             use_repo_map = main_model.use_repo_map
@@ -345,7 +353,9 @@ class Coder:
 
         max_inp_tokens = self.main_model.info.get("max_input_tokens") or 0
 
-        has_map_prompt = hasattr(self, "gpt_prompts") and self.gpt_prompts.repo_content_prefix
+        has_map_prompt = (
+            hasattr(self, "gpt_prompts") and self.gpt_prompts.repo_content_prefix
+        )
 
         if use_repo_map and self.repo and has_map_prompt:
             self.repo_map = RepoMap(
@@ -629,7 +639,8 @@ class Coder:
         if read_only_content:
             files_messages += [
                 dict(
-                    role="user", content=self.gpt_prompts.read_only_files_prefix + read_only_content
+                    role="user",
+                    content=self.gpt_prompts.read_only_files_prefix + read_only_content,
                 ),
                 dict(
                     role="assistant",
@@ -658,7 +669,10 @@ class Coder:
                     rel_fname = self.get_rel_fname(fname)
                     image_messages += [
                         {"type": "text", "text": f"Image file: {rel_fname}"},
-                        {"type": "image_url", "image_url": {"url": image_url, "detail": "high"}},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_url, "detail": "high"},
+                        },
                     ]
 
         if not image_messages:
@@ -690,6 +704,8 @@ class Coder:
             while True:
                 try:
                     user_message = self.get_input()
+                    if user_message == "/task":
+                        return "interactivechat"
                     self.run_one(user_message, preproc)
                     self.show_undo_hint()
                 except KeyboardInterrupt:
@@ -699,7 +715,9 @@ class Coder:
 
     def get_input(self):
         inchat_files = self.get_inchat_relative_files()
-        read_only_files = [self.get_rel_fname(fname) for fname in self.abs_read_only_fnames]
+        read_only_files = [
+            self.get_rel_fname(fname) for fname in self.abs_read_only_fnames
+        ]
         all_files = sorted(set(inchat_files + read_only_files))
         return self.io.get_input(
             self.root,
@@ -737,7 +755,9 @@ class Coder:
                 break
 
             if self.num_reflections >= self.max_reflections:
-                self.io.tool_error(f"Only {self.max_reflections} reflections allowed, stopping.")
+                self.io.tool_error(
+                    f"Only {self.max_reflections} reflections allowed, stopping."
+                )
                 return
 
             self.num_reflections += 1
@@ -784,7 +804,9 @@ class Coder:
 
     def summarize_worker(self):
         try:
-            self.summarized_done_messages = self.summarizer.summarize(self.done_messages)
+            self.summarized_done_messages = self.summarizer.summarize(
+                self.done_messages
+            )
         except ValueError as err:
             self.io.tool_error(err.args[0])
 
@@ -905,7 +927,8 @@ class Coder:
         if self.gpt_prompts.system_reminder:
             reminder_message = [
                 dict(
-                    role="system", content=self.fmt_system_prompt(self.gpt_prompts.system_reminder)
+                    role="system",
+                    content=self.fmt_system_prompt(self.gpt_prompts.system_reminder),
                 ),
             ]
         else:
@@ -1005,7 +1028,11 @@ class Coder:
                         messages[-1]["content"] = self.multi_response_content
                     else:
                         messages.append(
-                            dict(role="assistant", content=self.multi_response_content, prefix=True)
+                            dict(
+                                role="assistant",
+                                content=self.multi_response_content,
+                                prefix=True,
+                            )
                         )
                 except Exception as err:
                     self.io.tool_error(f"Unexpected error: {err}")
@@ -1122,7 +1149,9 @@ class Coder:
         res.append("Token counts below are approximate.")
         res.append("")
         res.append(f"Input tokens: ~{input_tokens:,} of {max_input_tokens:,}{inp_err}")
-        res.append(f"Output tokens: ~{output_tokens:,} of {max_output_tokens:,}{out_err}")
+        res.append(
+            f"Output tokens: ~{output_tokens:,} of {max_output_tokens:,}{out_err}"
+        )
         res.append(f"Total tokens: ~{total_tokens:,} of {max_input_tokens:,}{tot_err}")
 
         if output_tokens >= max_output_tokens:
@@ -1162,7 +1191,9 @@ class Coder:
         # Commit any formatting changes that happened
         if self.repo and self.auto_commits and not self.dry_run:
             commit_res = self.repo.commit(
-                fnames=fnames, context="The linter made edits to these files", aider_edits=True
+                fnames=fnames,
+                context="The linter made edits to these files",
+                aider_edits=True,
             )
             if commit_res:
                 self.show_auto_commit_outcome(commit_res)
@@ -1174,7 +1205,9 @@ class Coder:
 
     def update_cur_messages(self, edited):
         if self.partial_response_content:
-            self.cur_messages += [dict(role="assistant", content=self.partial_response_content)]
+            self.cur_messages += [
+                dict(role="assistant", content=self.partial_response_content)
+            ]
         if self.partial_response_function_call:
             self.cur_messages += [
                 dict(
@@ -1207,7 +1240,13 @@ class Coder:
             fname = os.path.basename(rel_fname)
 
             # Don't add basenames that could be plain words like "run" or "make"
-            if "/" in fname or "\\" in fname or "." in fname or "_" in fname or "-" in fname:
+            if (
+                "/" in fname
+                or "\\" in fname
+                or "." in fname
+                or "_" in fname
+                or "-" in fname
+            ):
                 if fname not in fname_to_rel_fnames:
                     fname_to_rel_fnames[fname] = []
                 fname_to_rel_fnames[fname].append(rel_fname)
@@ -1293,7 +1332,9 @@ class Coder:
         show_func_err = None
         show_content_err = None
         try:
-            self.partial_response_function_call = completion.choices[0].message.function_call
+            self.partial_response_function_call = completion.choices[
+                0
+            ].message.function_call
         except AttributeError as func_err:
             show_func_err = func_err
 
@@ -1366,9 +1407,9 @@ class Coder:
                     sys.stdout.write(text)
                 except UnicodeEncodeError:
                     # Safely encode and decode the text
-                    safe_text = text.encode(sys.stdout.encoding, errors="backslashreplace").decode(
-                        sys.stdout.encoding
-                    )
+                    safe_text = text.encode(
+                        sys.stdout.encoding, errors="backslashreplace"
+                    ).decode(sys.stdout.encoding)
                     sys.stdout.write(safe_text)
                 sys.stdout.flush()
                 yield text
@@ -1390,19 +1431,21 @@ class Coder:
             completion_tokens = completion.usage.completion_tokens
         else:
             prompt_tokens = self.main_model.token_count(messages)
-            completion_tokens = self.main_model.token_count(self.partial_response_content)
+            completion_tokens = self.main_model.token_count(
+                self.partial_response_content
+            )
 
         self.message_tokens_sent += prompt_tokens
         self.message_tokens_received += completion_tokens
 
-        tokens_report = (
-            f"Tokens: {self.message_tokens_sent:,} sent, {self.message_tokens_received:,} received."
-        )
+        tokens_report = f"Tokens: {self.message_tokens_sent:,} sent, {self.message_tokens_received:,} received."
 
         if self.main_model.info.get("input_cost_per_token"):
             cost += prompt_tokens * self.main_model.info.get("input_cost_per_token")
             if self.main_model.info.get("output_cost_per_token"):
-                cost += completion_tokens * self.main_model.info.get("output_cost_per_token")
+                cost += completion_tokens * self.main_model.info.get(
+                    "output_cost_per_token"
+                )
             self.total_cost += cost
             self.message_cost += cost
 
@@ -1476,7 +1519,9 @@ class Coder:
     def get_addable_relative_files(self):
         all_files = set(self.get_all_relative_files())
         inchat_files = set(self.get_inchat_relative_files())
-        read_only_files = set(self.get_rel_fname(fname) for fname in self.abs_read_only_fnames)
+        read_only_files = set(
+            self.get_rel_fname(fname) for fname in self.abs_read_only_fnames
+        )
         return all_files - inchat_files - read_only_files
 
     def check_for_dirty_commit(self, path):
@@ -1563,7 +1608,9 @@ class Coder:
         if tokens < warn_number_of_tokens:
             return
 
-        self.io.tool_error("Warning: it's best to only add files that need changes to the chat.")
+        self.io.tool_error(
+            "Warning: it's best to only add files that need changes to the chat."
+        )
         self.io.tool_error(urls.edit_errors)
         self.warning_given = True
 
@@ -1694,7 +1741,9 @@ class Coder:
         if not self.commit_before_message:
             return
         if self.commit_before_message[-1] != self.repo.get_head():
-            self.io.tool_output("You can use /undo to undo and discard each aider commit.")
+            self.io.tool_output(
+                "You can use /undo to undo and discard each aider commit."
+            )
 
     def dirty_commit(self):
         if not self.need_commit_before_edits:
