@@ -1673,12 +1673,6 @@ class Coder:
             self.reflected_message = str(err)
             return
 
-        for path in edited:
-            if self.dry_run:
-                self.io.tool_output(f"Did not apply edit to {path} (--dry-run)")
-            else:
-                self.io.tool_output(f"Applied edit to {path}")
-
         return edited
 
     def parse_partial_args(self):
