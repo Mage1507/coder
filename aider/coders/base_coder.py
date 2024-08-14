@@ -1629,6 +1629,9 @@ class Coder:
                 seen[path] = allowed
 
             if allowed:
+                if not self.io.confirm_ask(f"Apply edit to {path}?"):
+                    self.io.tool_error(f"Skipping edit to {path}")
+                    continue
                 res.append(edit)
 
         self.dirty_commit()
