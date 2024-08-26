@@ -409,7 +409,7 @@ class Commands:
             )
         self.io.tool_output(f"{cost_pad}{fmt(limit)} tokens max context window size")
 
-    def cmd_undo(self, args):
+    def cmd_undocommit(self, args):
         "Undo the last git commit if it was done by aider"
         if not self.coder.repo:
             self.io.tool_error("No git repository found.")
@@ -1104,6 +1104,54 @@ class Commands:
     def cmd_task(self, args):
         "Returning to Interactive Agent"
         return
+
+    def cmd_undochanges(self, args):
+        "Revoke the changes made in the working directory"
+        if not self.coder.repo:
+            self.io.tool_error("No git repository found.")
+            return
+
+        if not self.coder.repo.is_dirty():
+            self.io.tool_error("No changes to revoke.")
+            return
+
+        unstaged_files = self.coder.repo.repo.git.diff("--name-only").splitlines()
+        if not unstaged_files:
+            self.io.tool_error("No changes to revoke.")
+            return
+
+        if not unstaged_files:
+            self.io.tool_error("No changes to revoke.")
+            return
+
+        for fname in unstaged_files:
+            self.io.tool_output(f"Reverting changes in {fname}.")
+            self.coder.repo.repo.git.checkout("--", fname)
+
+        # Remove untracked files (newly created files)
+        untracked_files = self.coder.repo.repo.git.ls_files(
+            "--others", "--exclude-standard"
+        ).splitlines()
+        if untracked_files:
+            self.io.tool_output("Removing untracked files:")
+            for fname in untracked_files:
+                self.io.tool_output(f"Removing {fname}.")
+            self.coder.repo.repo.git.clean("-f")
+
+        self.io.tool_output("All changes in the working directory have been revoked.")
+
+    def cmd_stagechanges(self, args=None):
+        "Stage all changes in the working directory"
+        if not self.coder.repo:
+            self.io.tool_error("No git repository found.")
+            return
+
+        if not self.coder.repo.is_dirty():
+            self.io.tool_error("No changes to stage.")
+            return
+
+        self.coder.repo.repo.git.add(A=True)
+        self.io.tool_output("All changes have been staged.")
 
 
 def expand_subdir(file_path):
