@@ -76,6 +76,7 @@ class Coder:
     message_cost = 0.0
     message_tokens_sent = 0
     message_tokens_received = 0
+    security_scan = True
 
     @classmethod
     def create(
@@ -234,6 +235,7 @@ class Coder:
         commands=None,
         summarizer=None,
         total_cost=0.0,
+        security_scan=True,
     ):
         self.commit_before_message = []
         self.aider_commit_hashes = set()
@@ -1101,6 +1103,20 @@ class Coder:
                     self.reflected_message = lint_errors
                     self.update_cur_messages(set())
                     return
+
+        if edited and self.security_scan:
+            self.io.tool_output("Running security scan on edited files...")
+            for fname in edited:
+                abs_fname = self.abs_root_path(fname)
+                security_errors = self.commands.cmd_test(f"snyk code test {abs_fname}")
+                if security_errors:
+                    self.io.tool_error(security_errors, strip=False)
+                    if self.io.confirm_ask(
+                        f"Attempt to fix security issues in {fname}?"
+                    ):
+                        self.reflected_message = security_errors
+                        self.update_cur_messages(set())
+                        return
 
         if edited and self.auto_test:
             test_errors = self.commands.cmd_test(self.test_cmd)
