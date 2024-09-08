@@ -96,7 +96,7 @@ class Coder:
     chat_language = None
     undo_stack = None
     redo_stack = None
-    auto_commit = True
+    auto_committ = True
     created_by_aider = set()
 
     @classmethod
@@ -275,7 +275,7 @@ class Coder:
     ):
         self.undo_stack = []
         self.redo_stack = []
-        self.auto_commit = auto_commits
+        self.auto_committ = auto_commits
         self.chat_language = chat_language
         self.commit_before_message = []
         self.aider_commit_hashes = set()

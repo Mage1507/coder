@@ -460,7 +460,7 @@ class Commands:
 
     def raw_cmd_undo(self, args):
         "Undo last git commit if it's done by aider; undo last prompt & changes if --no-auto-commit is enabled"
-        if not self.coder.auto_commit:
+        if not self.coder.auto_committ:
             state = self.coder.pop_undo_state()
             if state is None:
                 self.io.tool_error("No more actions to undo.")
@@ -617,7 +617,7 @@ class Commands:
     def cmd_redo(self, args):
         "Redo the last undone action (only works in --no-auto-commit mode)"
 
-        if self.coder.auto_commit:
+        if self.coder.auto_committ:
             self.io.tool_error("Redo is only available in --no-auto-commit mode.")
             return
 
