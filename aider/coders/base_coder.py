@@ -94,6 +94,10 @@ class Coder:
     suggest_shell_commands = True
     ignore_mentions = None
     chat_language = None
+    undo_stack = None
+    redo_stack = None
+    auto_commit = True
+    created_by_aider = set()
 
     @classmethod
     def create(
@@ -269,6 +273,9 @@ class Coder:
         suggest_shell_commands=True,
         chat_language=None,
     ):
+        self.undo_stack = []
+        self.redo_stack = []
+        self.auto_commit = auto_commits
         self.chat_language = chat_language
         self.commit_before_message = []
         self.aider_commit_hashes = set()
@@ -755,6 +762,41 @@ class Coder:
         except EOFError:
             return
 
+    def push_undo_state(self):
+        done_messages = list(self.done_messages)
+        cur_messages = list(self.cur_messages)
+        file_contents = {}
+        for fname in self.abs_fnames:
+            if os.path.exists(fname):
+                with open(fname, "r") as f:
+                    file_contents[fname] = f.read()
+            else:
+                file_contents[fname] = ""  # Indicate that the file doesn't exist yet
+
+        if not self.undo_stack:
+            self.undo_stack.append(([], [], file_contents))
+        else:
+            if cur_messages and len(cur_messages) > 1:
+                self.undo_stack.append((done_messages, cur_messages, file_contents))
+            else:
+                self.undo_stack.append((done_messages, [], file_contents))
+
+        # Clear the redo stack when a new action is performed
+        self.redo_stack.clear()
+
+    def pop_undo_state(self):
+        if not self.undo_stack:
+            return None
+        state = self.undo_stack.pop()
+        self.redo_stack.append(
+            (
+                list(self.done_messages),
+                list(self.cur_messages),
+                {fname: self.io.read_text(fname) for fname in self.abs_fnames},
+            )
+        )
+        return state
+
     def get_input(self):
         inchat_files = self.get_inchat_relative_files()
         read_only_files = [
@@ -948,10 +990,16 @@ class Coder:
         platform_text = self.get_platform_info()
 
         if self.suggest_shell_commands:
-            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(platform=platform_text)
-            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(
+                platform=platform_text
+            )
+            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(
+                platform=platform_text
+            )
         else:
-            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(
+                platform=platform_text
+            )
             shell_cmd_reminder = self.gpt_prompts.no_shell_cmd_reminder.format(
                 platform=platform_text
             )
@@ -1779,6 +1827,7 @@ class Coder:
                     self.repo.repo.git.add(full_path)
 
             self.abs_fnames.add(full_path)
+            self.created_by_aider.add(path)
             self.check_added_files()
             return True
 
@@ -1863,6 +1912,7 @@ class Coder:
             edits = self.get_edits()
             edits = self.prepare_to_edit(edits)
             edited = set(edit[0] for edit in edits)
+            self.push_undo_state()
             self.apply_edits(edits)
         except ValueError as err:
             self.num_malformed_responses += 1

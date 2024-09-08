@@ -459,6 +459,57 @@ class Commands:
             self.io.tool_error(f"Unable to complete undo: {err}")
 
     def raw_cmd_undo(self, args):
+        "Undo last git commit if it's done by aider; undo last prompt & changes if --no-auto-commit is enabled"
+        if not self.coder.auto_commit:
+            state = self.coder.pop_undo_state()
+            if state is None:
+                self.io.tool_error("No more actions to undo.")
+                return
+
+            chat_history, cur_messages, file_contents = state
+            self.coder.done_messages = chat_history
+            self.coder.cur_messages = cur_messages
+
+            for fname, content in file_contents.items():
+                if content == "":
+                    rel_fname = self.coder.get_rel_fname(fname)
+
+                    # This file was created during the last prompt, so we should delete it
+                    if rel_fname in self.coder.created_by_aider:
+                        try:
+                            # Use drop_rel_fname to drop the deleted file
+                            self.coder.drop_rel_fname(rel_fname)
+
+                            # Remove the file from git and untrack it
+                            if self.coder.repo:
+                                self.coder.repo.remove_file_from_tracking(rel_fname)
+
+                            if os.path.exists(fname):
+                                os.remove(fname)
+                                self.io.tool_output(f"Deleted file: {fname}")
+
+                                # Recursively delete empty parent directories
+                                parent_dir = os.path.dirname(fname)
+                                while parent_dir and parent_dir != self.coder.root:
+                                    if not os.listdir(parent_dir):
+                                        os.rmdir(parent_dir)
+                                        parent_dir = os.path.dirname(parent_dir)
+                                    else:
+                                        break
+                            else:
+                                self.io.tool_output(
+                                    f"File {fname} was already deleted."
+                                )
+
+                        except OSError as e:
+                            self.io.tool_error(f"Error deleting file or directory: {e}")
+                else:
+                    with open(fname, "w") as f:
+                        f.write(content)
+
+            self.io.tool_output("Undid the last prompt and its changes.")
+            return
+
         if not self.coder.repo:
             self.io.tool_error("No git repository found.")
             return
@@ -562,6 +613,56 @@ class Commands:
 
         if self.coder.main_model.send_undo_reply:
             return prompts.undo_command_reply
+
+    def cmd_redo(self, args):
+        "Redo the last undone action (only works in --no-auto-commit mode)"
+
+        if self.coder.auto_commit:
+            self.io.tool_error("Redo is only available in --no-auto-commit mode.")
+            return
+
+        if not self.coder.redo_stack:
+            self.io.tool_error("No actions to redo.")
+            return
+
+        state = self.coder.redo_stack.pop()
+        chat_history, cur_messages, file_contents = state
+
+        for fname, content in file_contents.items():
+            rel_fname = self.coder.get_rel_fname(fname)
+            if rel_fname in self.coder.created_by_aider:
+                os.makedirs(os.path.dirname(fname), exist_ok=True)
+                with open(fname, "w") as f:
+                    f.write("")
+                self.coder.abs_fnames.add(fname)
+
+        # Push the current state to the undo stack
+        self.coder.push_undo_state()
+
+        self.coder.done_messages = chat_history
+        self.coder.cur_messages = cur_messages
+
+        for fname, content in file_contents.items():
+            if content == "":
+                if os.path.exists(fname):
+                    os.remove(fname)
+                    self.io.tool_output(f"Deleted file: {fname}")
+                    if fname in self.coder.abs_fnames:
+                        self.coder.abs_fnames.remove(fname)
+            else:
+                # Create parent directories if they don't exist
+                os.makedirs(os.path.dirname(fname), exist_ok=True)
+
+                # Write content to the file
+                with open(fname, "w") as f:
+                    f.write(content)
+
+                # Add the file to git and to abs_fnames
+                if self.coder.repo:
+                    self.coder.repo.repo.git.add(fname)
+                self.coder.abs_fnames.add(fname)
+
+        self.io.tool_output("Redid the last undone action.")
 
     def cmd_diff(self, args=""):
         "Display the diff of changes since the last message"
