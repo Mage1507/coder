@@ -94,6 +94,7 @@ class Coder:
     suggest_shell_commands = True
     ignore_mentions = None
     chat_language = None
+    security_scan = True
 
     @classmethod
     def create(
@@ -268,6 +269,7 @@ class Coder:
         num_cache_warming_pings=0,
         suggest_shell_commands=True,
         chat_language=None,
+        security_scan=True,
     ):
         self.chat_language = chat_language
         self.commit_before_message = []
@@ -948,10 +950,16 @@ class Coder:
         platform_text = self.get_platform_info()
 
         if self.suggest_shell_commands:
-            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(platform=platform_text)
-            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(
+                platform=platform_text
+            )
+            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(
+                platform=platform_text
+            )
         else:
-            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(
+                platform=platform_text
+            )
             shell_cmd_reminder = self.gpt_prompts.no_shell_cmd_reminder.format(
                 platform=platform_text
             )
@@ -1243,6 +1251,19 @@ class Coder:
 
         if self.reflected_message:
             return
+
+        if edited and self.security_scan:
+            self.io.tool_output("Running security scan on edited files.")
+            for fname in edited:
+                abs_fname = self.abs_root_path(fname)
+                content = self.io.read_text(abs_fname)
+                if content is None:
+                    self.io.tool_warning(
+                        f"No content in {fname}, skipping security scan."
+                    )
+                    continue
+                security_prompt = self.gpt_prompts.security_prompt.format(code=content)
+                self.run(security_prompt)
 
         if edited and self.auto_lint:
             lint_errors = self.lint_edited(edited)
