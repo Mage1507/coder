@@ -1911,8 +1911,8 @@ class Coder:
         try:
             edits = self.get_edits()
             edits = self.prepare_to_edit(edits)
-            edited = set(edit[0] for edit in edits)
             self.push_undo_state()
+            edited = set(edit[0] for edit in edits)
             self.apply_edits(edits)
         except ValueError as err:
             self.num_malformed_responses += 1
