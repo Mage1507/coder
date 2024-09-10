@@ -52,7 +52,7 @@ Do not edit these files!
     shell_cmd_reminder = ""
     no_shell_cmd_prompt = ""
     no_shell_cmd_reminder = ""
-    security_prompt = """Consider the following Top 10 OWASP vulnerabilities given below , analyze the code . If issues found , suggest the changes to fix them.
+    security_prompt = """Analyze the following code files for potential security vulnerabilities based on the OWASP Top 10 list provided below. For each identified vulnerability,resolve the issue. Ensure the analysis covers:
 1. Improper Credential Usage
 2. Inadequate Supply Chain Security
 3. Insecure Authentication/Authorization
@@ -63,9 +63,4 @@ Do not edit these files!
 8. Security Misconfiguration
 9. Insecure Data Storage
 10. Insufficient Cryptography
-
-Code : 
-
-{code}
-
 """

@@ -95,6 +95,7 @@ class Coder:
     ignore_mentions = None
     chat_language = None
     security_scan = True
+    files_to_scan = []
 
     @classmethod
     def create(
@@ -270,6 +271,7 @@ class Coder:
         suggest_shell_commands=True,
         chat_language=None,
         security_scan=True,
+        files_to_scan=[],
     ):
         self.chat_language = chat_language
         self.commit_before_message = []
@@ -277,6 +279,8 @@ class Coder:
         self.rejected_urls = set()
         self.abs_root_path_cache = {}
         self.ignore_mentions = set()
+        self.security_scan = security_scan
+        self.files_to_scan = files_to_scan
 
         self.suggest_shell_commands = suggest_shell_commands
 
@@ -1253,17 +1257,11 @@ class Coder:
             return
 
         if edited and self.security_scan:
-            self.io.tool_output("Running security scan on edited files.")
+            self.files_to_scan = []
             for fname in edited:
                 abs_fname = self.abs_root_path(fname)
-                content = self.io.read_text(abs_fname)
-                if content is None:
-                    self.io.tool_warning(
-                        f"No content in {fname}, skipping security scan."
-                    )
-                    continue
-                security_prompt = self.gpt_prompts.security_prompt.format(code=content)
-                self.run(security_prompt)
+                self.files_to_scan.append(abs_fname)
+            self.commands.cmd_security_scan()
 
         if edited and self.auto_lint:
             lint_errors = self.lint_edited(edited)
