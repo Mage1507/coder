@@ -919,10 +919,6 @@ class Commands:
         "Exit the application"
         sys.exit()
 
-    def cmd_quit(self, args):
-        "Exit the application"
-        sys.exit()
-
     def cmd_ls(self, args):
         "List all known files and indicate which are included in the chat session"
 
