@@ -1220,6 +1220,31 @@ class Commands:
 
         report_github_issue(issue_text, title=title, confirm=False)
 
+    def cmd_security_scan(self, args=None):
+        "Running a security scan on the code file"
+        self.io.tool_output("\nRunning security scan")
+        if not self.coder.files_to_scan:
+            self.io.tool_error("No files to scan.")
+            return
+        self.io.tool_output(f"\nFiles to scan: {self.coder.files_to_scan}\n")
+        security_prompt = self.coder.gpt_prompts.security_prompt
+
+        for file in self.coder.files_to_scan:
+            self.io.tool_output(f"\nScanning : {file}\n")
+            from aider.coders import Coder
+
+            coder = Coder.create(
+                io=self.io,
+                summarize_from_coder=False,
+                fnames=[file],
+                security_scan=False,
+                auto_commits=False,
+                auto_lint=False,
+            )
+            coder.run(security_prompt)
+            self.io.tool_output(f"\nScanning completed for {file}")
+        return
+
 
 def expand_subdir(file_path):
     if file_path.is_file():

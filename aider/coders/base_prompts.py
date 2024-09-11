@@ -1,11 +1,15 @@
 class CoderPrompts:
     system_reminder = ""
 
-    files_content_gpt_edits = "I committed the changes with git hash {hash} & commit msg: {message}"
+    files_content_gpt_edits = (
+        "I committed the changes with git hash {hash} & commit msg: {message}"
+    )
 
     files_content_gpt_edits_no_repo = "I updated the files."
 
-    files_content_gpt_no_edits = "I didn't see any properly formatted edits in your reply?!"
+    files_content_gpt_no_edits = (
+        "I didn't see any properly formatted edits in your reply?!"
+    )
 
     files_content_local_edits = "I edited the files myself."
 
@@ -48,3 +52,23 @@ Do not edit these files!
     shell_cmd_reminder = ""
     no_shell_cmd_prompt = ""
     no_shell_cmd_reminder = ""
+    security_prompt = """
+Analyze the following code files for potential security vulnerabilities based on the OWASP Top 10 list:
+
+1. Improper Credential Usage
+2. Inadequate Supply Chain Security
+3. Insecure Authentication/Authorization
+4. Insufficient Input/Output Validation
+5. Insecure Communication
+6. Inadequate Privacy Controls
+7. Insufficient Binary Protections
+8. Security Misconfiguration
+9. Insecure Data Storage
+10. Insufficient Cryptography
+
+For each file:
+1. List the specific issues found in the code file.
+2. Fix the issues in the code file by providing the corrected code.
+
+Do not include additional context. If issue not found in the code file, state that no issue was found with file name
+"""

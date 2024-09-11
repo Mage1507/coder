@@ -94,6 +94,8 @@ class Coder:
     suggest_shell_commands = True
     ignore_mentions = None
     chat_language = None
+    security_scan = True
+    files_to_scan = []
 
     @classmethod
     def create(
@@ -268,6 +270,8 @@ class Coder:
         num_cache_warming_pings=0,
         suggest_shell_commands=True,
         chat_language=None,
+        security_scan=True,
+        files_to_scan=[],
     ):
         self.chat_language = chat_language
         self.commit_before_message = []
@@ -275,6 +279,8 @@ class Coder:
         self.rejected_urls = set()
         self.abs_root_path_cache = {}
         self.ignore_mentions = set()
+        self.security_scan = security_scan
+        self.files_to_scan = files_to_scan
 
         self.suggest_shell_commands = suggest_shell_commands
 
@@ -948,10 +954,16 @@ class Coder:
         platform_text = self.get_platform_info()
 
         if self.suggest_shell_commands:
-            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(platform=platform_text)
-            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(
+                platform=platform_text
+            )
+            shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(
+                platform=platform_text
+            )
         else:
-            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(platform=platform_text)
+            shell_cmd_prompt = self.gpt_prompts.no_shell_cmd_prompt.format(
+                platform=platform_text
+            )
             shell_cmd_reminder = self.gpt_prompts.no_shell_cmd_reminder.format(
                 platform=platform_text
             )
@@ -1243,6 +1255,13 @@ class Coder:
 
         if self.reflected_message:
             return
+
+        if edited and self.security_scan:
+            self.files_to_scan = []
+            for fname in edited:
+                abs_fname = self.abs_root_path(fname)
+                self.files_to_scan.append(abs_fname)
+            self.commands.cmd_security_scan()
 
         if edited and self.auto_lint:
             lint_errors = self.lint_edited(edited)
