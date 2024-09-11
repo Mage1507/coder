@@ -72,68 +72,6 @@ class Commands:
         models.sanity_check_models(self.io, model)
         raise SwitchCoder(main_model=model)
 
-    def cmd_chat_mode(self, args):
-        "Switch to a new chat mode"
-
-        from aider import coders
-
-        ef = args.strip()
-        valid_formats = OrderedDict(
-            sorted(
-                (
-                    coder.edit_format,
-                    (
-                        coder.__doc__.strip().split("\n")[0]
-                        if coder.__doc__
-                        else "No description"
-                    ),
-                )
-                for coder in coders.__all__
-                if getattr(coder, "edit_format", None)
-            )
-        )
-
-        show_formats = OrderedDict(
-            [
-                ("help", "Get help about using aider (usage, config, troubleshoot)."),
-                ("ask", "Ask questions about your code without making any changes."),
-                ("code", "Ask for changes to your code (using the best edit format)."),
-            ]
-        )
-
-        if ef not in valid_formats and ef not in show_formats:
-            if ef:
-                self.io.tool_error(f'Chat mode "{ef}" should be one of these:\n')
-            else:
-                self.io.tool_output("Chat mode should be one of these:\n")
-
-            max_format_length = max(len(format) for format in valid_formats.keys())
-            for format, description in show_formats.items():
-                self.io.tool_output(f"- {format:<{max_format_length}} : {description}")
-
-            self.io.tool_output("\nOr a valid edit format:\n")
-            for format, description in valid_formats.items():
-                if format not in show_formats:
-                    self.io.tool_output(
-                        f"- {format:<{max_format_length}} : {description}"
-                    )
-
-            return
-
-        summarize_from_coder = True
-        edit_format = ef
-
-        if ef == "code":
-            edit_format = self.coder.main_model.edit_format
-            summarize_from_coder = False
-        elif ef == "ask":
-            summarize_from_coder = False
-
-        raise SwitchCoder(
-            edit_format=edit_format,
-            summarize_from_coder=summarize_from_coder,
-        )
-
     def completions_model(self):
         models = litellm.model_cost.keys()
         return models
@@ -1096,10 +1034,6 @@ class Commands:
         "Ask questions about the code base without editing any files"
         return self._generic_chat_command(args, "ask")
 
-    def cmd_code(self, args):
-        "Ask for changes to your code"
-        return self._generic_chat_command(args, self.coder.main_model.edit_format)
-
     def _generic_chat_command(self, args, edit_format):
         if not args.strip():
             self.io.tool_error(
@@ -1277,9 +1211,13 @@ class Commands:
 
     def _add_read_only_file(self, abs_path, original_name):
         if abs_path in self.coder.abs_fnames:
-            self.io.tool_error(f"{original_name} is already in the chat as an editable file")
+            self.io.tool_error(
+                f"{original_name} is already in the chat as an editable file"
+            )
         elif abs_path in self.coder.abs_read_only_fnames:
-            self.io.tool_error(f"{original_name} is already in the chat as a read-only file")
+            self.io.tool_error(
+                f"{original_name} is already in the chat as a read-only file"
+            )
         else:
             self.coder.abs_read_only_fnames.add(abs_path)
             self.io.tool_output(f"Added {original_name} to read-only files.")
@@ -1320,11 +1258,6 @@ class Commands:
         repo_map = self.coder.get_repo_map(force_refresh=True)
         if repo_map:
             self.io.tool_output("The repo map has been refreshed, use /map to view it.")
-
-    def cmd_settings(self, args):
-        "Print out the current settings"
-        settings = format_settings(self.parser, self.args)
-        self.io.tool_output(settings)
 
     def cmd_report(self, args):
         "Report a problem by opening a GitHub Issue"
