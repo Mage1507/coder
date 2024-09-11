@@ -302,22 +302,26 @@ def sanity_check_repo(repo, io):
 
     try:
         repo.get_tracked_files()
-        return True
+        if not repo.git_repo_error:
+            return True
+        error_msg = str(repo.git_repo_error)
     except ANY_GIT_ERROR as exc:
         error_msg = str(exc)
+        bad_ver = "version in (1, 2)" in error_msg
+    except AssertionError as exc:
+        error_msg = str(exc)
+        bad_ver = True
 
-        if "version in (1, 2)" in error_msg:
-            io.tool_error("Aider only works with git repos with version number 1 or 2.")
-            io.tool_output(
-                "You may be able to convert your repo: git update-index --index-version=2"
-            )
-            io.tool_output("Or run aider --no-git to proceed without using git.")
-            io.tool_output("https://github.com/paul-gauthier/aider/issues/211")
-            return False
-
-        io.tool_error("Unable to read git repository, it may be corrupt?")
-        io.tool_output(error_msg)
+    if bad_ver:
+        io.tool_error("Aider only works with git repos with version number 1 or 2.")
+        io.tool_output("You may be able to convert your repo: git update-index --index-version=2")
+        io.tool_output("Or run aider --no-git to proceed without using git.")
+        io.tool_output("https://github.com/paul-gauthier/aider/issues/211")
         return False
+
+    io.tool_error("Unable to read git repository, it may be corrupt?")
+    io.tool_output(error_msg)
+    return False
 
 
 def main(argv=None, input=None, output=None, force_git_root=None, return_coder=False):
@@ -397,6 +401,8 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             user_input_color=args.user_input_color,
             tool_output_color=args.tool_output_color,
             tool_error_color=args.tool_error_color,
+            assistant_output_color=args.assistant_output_color,
+            code_theme=args.code_theme,
             dry_run=args.dry_run,
             encoding=args.encoding,
             llm_history_file=args.llm_history_file,
@@ -580,8 +586,6 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             dry_run=args.dry_run,
             map_tokens=args.map_tokens,
             verbose=args.verbose,
-            assistant_output_color=args.assistant_output_color,
-            code_theme=args.code_theme,
             stream=args.stream,
             use_git=args.git,
             restore_chat_history=args.restore_chat_history,
@@ -736,7 +740,7 @@ def check_and_load_imports(io, verbose=False):
             except Exception as err:
                 io.tool_error(str(err))
                 io.tool_output("Error loading required imports. Did you install aider properly?")
-                io.tool_output("https://aider.chat/docs/install.html")
+                io.tool_output("https://aider.chat/docs/install/install.html")
                 sys.exit(1)
 
             installs[str(key)] = True

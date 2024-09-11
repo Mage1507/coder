@@ -1,6 +1,18 @@
 
 # Release history
 
+### Aider v0.56.0
+
+- Enables prompt caching for Sonnet via OpenRouter by @fry69
+- Enables 8k output tokens for Sonnet via VertexAI and DeepSeek V2.5.
+- New `/report` command to open your browser with a pre-populated GitHub Issue.
+- New `--chat-language` switch to set the spoken language.
+- Now `--[no-]suggest-shell-commands` controls both prompting for and offering to execute shell commands.
+- Check key imports on launch, provide helpful error message if dependencies aren't available.
+- Renamed `--models` to `--list-models` by @fry69.
+- Numerous bug fixes for corner case crashes.
+- Aider wrote 56% of the code in this release.
+
 ### Aider v0.55.0
 
 - Only print the pip command when self updating on Windows, without running it.
@@ -676,7 +688,7 @@
 
 - Added `/git` command to run git from inside aider chats.
 - Use Meta-ENTER (Esc+ENTER in some environments) to enter multiline chat messages.
-- Create a `.gitignore` with `.aider*` to prevent users from accidentaly adding aider files to git.
+- Create a `.gitignore` with `.aider*` to prevent users from accidentally adding aider files to git.
 - Check pypi for newer versions and notify user.
 - Updated keyboard interrupt logic so that 2 ^C in 2 seconds always forces aider to exit.
 - Provide GPT with detailed error if it makes a bad edit block, ask for a retry.
