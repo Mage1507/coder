@@ -53,22 +53,29 @@ Do not edit these files!
     no_shell_cmd_prompt = ""
     no_shell_cmd_reminder = ""
     security_prompt = """
-Analyze the following code files for potential security vulnerabilities based on the OWASP Top 10 list:
+Analyze the following code file for potential security vulnerabilities based on the OWASP Top 10 list:
 
-1. Improper Credential Usage
-2. Inadequate Supply Chain Security
-3. Insecure Authentication/Authorization
-4. Insufficient Input/Output Validation
-5. Insecure Communication
-6. Inadequate Privacy Controls
-7. Insufficient Binary Protections
-8. Security Misconfiguration
-9. Insecure Data Storage
-10. Insufficient Cryptography
+1. Broken Access Control 
+2. Cryptographic Failures 
+3. Injection 
+4. Insecure Design 
+5. Security Misconfiguration 
+6. Vulnerable and Outdated Components 
+7. Identification and Authentication Failures 
+8. Software and Data Integrity Failures 
+9. Security Logging and Monitoring Failures
+10. Server-Side Request Forgery 
 
-For each file:
+After analyzing the code file :
+
+If issues found :
+
 1. List the specific issues found in the code file.
 2. Fix the issues in the code file by providing the corrected code.
 
-Do not include additional context. If issue not found in the code file, state that no issue was found with file name
+If no issues found :
+
+1. State that "No issue was found" with the file name.
+
+Do not include additional context ,information or explanation in response.
 """
