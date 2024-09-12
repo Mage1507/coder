@@ -825,31 +825,32 @@ class Commands:
                     self.coder.abs_fnames.remove(abs_fname)
                     self.io.tool_output(f"Removed {matched_file} from the chat")
 
-    def cmd_git(self, args):
-        "Run a git command"
-        combined_output = None
-        try:
-            args = "git " + args
-            env = dict(subprocess.os.environ)
-            env["GIT_EDITOR"] = "true"
-            result = subprocess.run(
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                env=env,
-                shell=True,
-                encoding=self.io.encoding,
-                errors="replace",
-            )
-            combined_output = result.stdout
-        except Exception as e:
-            self.io.tool_error(f"Error running /git command: {e}")
+    # commented until error is fixed
+    # def cmd_git(self, args):
+    #     "Run a git command"
+    #     combined_output = None
+    #     try:
+    #         args = "git " + args
+    #         env = dict(subprocess.os.environ)
+    #         env["GIT_EDITOR"] = "true"
+    #         result = subprocess.run(
+    #             args,
+    #             stdout=subprocess.PIPE,
+    #             stderr=subprocess.STDOUT,
+    #             text=True,
+    #             env=env,
+    #             shell=True,
+    #             encoding=self.io.encoding,
+    #             errors="replace",
+    #         )
+    #         combined_output = result.stdout
+    #     except Exception as e:
+    #         self.io.tool_error(f"Error running /git command: {e}")
 
-        if combined_output is None:
-            return
+    #     if combined_output is None:
+    #         return
 
-        self.io.tool_output(combined_output)
+    #     self.io.tool_output(combined_output)
 
     def cmd_test(self, args):
         "Run a shell command and add the output to the chat on non-zero exit code"
@@ -862,7 +863,7 @@ class Commands:
         if not callable(args):
             if type(args) is not str:
                 raise ValueError(repr(args))
-            return self.cmd_run(args, True)
+            return self.test_cmd_run(args, True)
 
         errors = args()
         if not errors:
@@ -871,7 +872,8 @@ class Commands:
         self.io.tool_output(errors)
         return errors
 
-    def cmd_run(self, args, add_on_nonzero_exit=False):
+    # Changed the name of the function until the error is fixed (It is not removed since used by cmd_test)
+    def test_cmd_run(self, args, add_on_nonzero_exit=False):
         "Run a shell command and optionally add the output to the chat (alias: !)"
         exit_status, combined_output = run_cmd(
             args, verbose=self.verbose, error_print=self.io.tool_error
