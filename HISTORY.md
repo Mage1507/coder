@@ -1,6 +1,162 @@
 
 # Release history
 
+### Aider v0.56.0
+
+- Enables prompt caching for Sonnet via OpenRouter by @fry69
+- Enables 8k output tokens for Sonnet via VertexAI and DeepSeek V2.5.
+- New `/report` command to open your browser with a pre-populated GitHub Issue.
+- New `--chat-language` switch to set the spoken language.
+- Now `--[no-]suggest-shell-commands` controls both prompting for and offering to execute shell commands.
+- Check key imports on launch, provide helpful error message if dependencies aren't available.
+- Renamed `--models` to `--list-models` by @fry69.
+- Numerous bug fixes for corner case crashes.
+- Aider wrote 56% of the code in this release.
+
+### Aider v0.55.0
+
+- Only print the pip command when self updating on Windows, without running it.
+- Converted many error messages to warning messages.
+- Added `--tool-warning-color` setting.
+- Blanket catch and handle git errors in any `/command`.
+- Catch and handle glob errors in `/add`, errors writing files.
+- Disabled built in linter for typescript.
+- Catch and handle terminals which don't support pretty output.
+- Catch and handle playwright and pandoc errors.
+- Catch `/voice` transcription exceptions, show the WAV file so the user can recover it.
+- Aider wrote 53% of the code in this release.
+
+### Aider v0.54.12
+
+- Switched to `vX.Y.Z.dev` version naming.
+
+### Aider v0.54.11
+
+- Improved printed pip command output on Windows.
+
+### Aider v0.54.10
+
+- Bugfix to test command in platform info.
+
+### Aider v0.54.9
+
+- Include important devops files in the repomap.
+- Print quoted pip install commands to the user.
+- Adopt setuptools_scm to provide dev versions with git hashes.
+- Share active test and lint commands with the LLM.
+- Catch and handle most errors creating new files, reading existing files.
+- Catch and handle most git errors.
+- Added --verbose debug output for shell commands.
+
+### Aider v0.54.8
+
+- Startup QOL improvements:
+  - Sanity check the git repo and exit gracefully on problems.
+  - Pause for confirmation after model sanity check to allow user to review warnings.
+- Bug fix for shell commands on Windows.
+- Do not fuzzy match filenames when LLM is creating a new file, by @ozapinq
+- Numerous corner case bug fixes submitted via new crash report -> GitHub Issue feature.
+- Crash reports now include python version, OS, etc.
+
+### Aider v0.54.7
+
+- Offer to submit a GitHub issue pre-filled with uncaught exception info.
+- Bugfix for infinite output.
+
+### Aider v0.54.6
+
+- New `/settings` command to show active settings.
+- Only show cache warming status update if `--verbose`.
+
+### Aider v0.54.5
+
+- Bugfix for shell commands on Windows.
+- Refuse to make git repo in $HOME, warn user.
+- Don't ask again in current session about a file the user has said not to add to the chat.
+- Added `--update` as an alias for `--upgrade`.
+
+### Aider v0.54.4
+
+- Bugfix to completions for `/model` command.
+- Bugfix: revert home dir special case.
+
+### Aider v0.54.3
+
+- Dependency `watchdog<5` for docker image.
+
+### Aider v0.54.2
+
+- When users launch aider in their home dir, help them find/create a repo in a subdir.
+- Added missing `pexpect` dependency.
+
+### Aider v0.54.0
+
+- Added model settings for `gemini/gemini-1.5-pro-exp-0827` and `gemini/gemini-1.5-flash-exp-0827`.
+- Shell and `/run` commands can now be interactive in environments where a pty is available.
+- Optionally share output of suggested shell commands back to the LLM.
+- New `--[no-]suggest-shell-commands` switch to configure shell commands.
+- Performance improvements for autocomplete in large/mono repos.
+- New `--upgrade` switch to install latest version of aider from pypi.
+- Bugfix to `--show-prompt`.
+- Disabled automatic reply to the LLM on `/undo` for all models.
+- Removed pager from `/web` output.
+- Aider wrote 64% of the code in this release.
+
+### Aider v0.53.0
+
+- [Keep your prompt cache from expiring](https://aider.chat/docs/usage/caching.html#preventing-cache-expiration) with `--cache-keepalive-pings`.
+  - Pings the API every 5min to keep the cache warm.
+- You can now bulk accept/reject a series of add url and run shell confirmations.
+- Improved matching of filenames from S/R blocks with files in chat.
+- Stronger prompting for Sonnet to make edits in code chat mode.
+- Stronger prompting for the LLM to specify full file paths.
+- Improved shell command prompting.
+- Weak model now uses `extra_headers`, to support Anthropic beta features.
+- New `--install-main-branch` to update to the latest dev version of aider.
+- Improved error messages on attempt to add not-git subdir to chat.
+- Show model metadata info on `--verbose`.
+- Improved warnings when LLMs env variables aren't set.
+- Bugfix to windows filenames which contain `\_`.
+- Aider wrote 59% of the code in this release.
+
+### Aider v0.52.1
+
+- Bugfix for NameError when applying edits.
+
+### Aider v0.52.0
+
+- Aider now offers to run shell commands:
+  - Launch a browser to view updated html/css/js.
+  - Install new dependencies.
+  - Run DB migrations. 
+  - Run the program to exercise changes.
+  - Run new test cases.
+- `/read` and `/drop` now expand `~` to the home dir.
+- Show the active chat mode at aider prompt.
+- New `/reset` command to `/drop` files and `/clear` chat history.
+- New `--map-multiplier-no-files` to control repo map size multiplier when no files are in the chat.
+  - Reduced default multiplier to 2.
+- Bugfixes and improvements to auto commit sequencing.
+- Improved formatting of token reports and confirmation dialogs.
+- Default OpenAI model is now `gpt-4o-2024-08-06`.
+- Bumped dependencies to pickup litellm bugfixes.
+- Aider wrote 68% of the code in this release.
+
+### Aider v0.51.0
+
+- Prompt caching for Anthropic models with `--cache-prompts`.
+  - Caches the system prompt, repo map and `/read-only` files.
+- Repo map recomputes less often in large/mono repos or when caching enabled.
+  - Use `--map-refresh <always|files|manual|auto>` to configure.
+- Improved cost estimate logic for caching.
+- Improved editing performance on Jupyter Notebook `.ipynb` files.
+- Show which config yaml file is loaded with `--verbose`.
+- Bumped dependency versions.
+- Bugfix: properly load `.aider.models.metadata.json` data.
+- Bugfix: Using `--msg /ask ...` caused an exception.
+- Bugfix: litellm tokenizer bug for images.
+- Aider wrote 56% of the code in this release.
+
 ### Aider v0.50.1
 
 - Bugfix for provider API exceptions.
@@ -532,7 +688,7 @@
 
 - Added `/git` command to run git from inside aider chats.
 - Use Meta-ENTER (Esc+ENTER in some environments) to enter multiline chat messages.
-- Create a `.gitignore` with `.aider*` to prevent users from accidentaly adding aider files to git.
+- Create a `.gitignore` with `.aider*` to prevent users from accidentally adding aider files to git.
 - Check pypi for newer versions and notify user.
 - Updated keyboard interrupt logic so that 2 ^C in 2 seconds always forces aider to exit.
 - Provide GPT with detailed error if it makes a bad edit block, ask for a retry.

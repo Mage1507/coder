@@ -22,7 +22,7 @@ def default_env_file(git_root):
 
 def get_parser(default_config_files, git_root):
     parser = configargparse.ArgumentParser(
-        description="aider is GPT powered coding in your terminal",
+        description="aider is AI pair programming in your terminal",
         add_config_file_help=True,
         default_config_files=default_config_files,
         auto_env_var_prefix="AIDER_",
@@ -74,7 +74,7 @@ def get_parser(default_config_files, git_root):
         const=gpt_4_model,
         help=f"Use {gpt_4_model} model for the main chat",
     )
-    gpt_4o_model = "gpt-4o"
+    gpt_4o_model = "gpt-4o-2024-08-06"
     group.add_argument(
         "--4o",
         action="store_const",
@@ -121,6 +121,7 @@ def get_parser(default_config_files, git_root):
     ##########
     group = parser.add_argument_group("Model Settings")
     group.add_argument(
+        "--list-models",
         "--models",
         metavar="MODEL",
         help="List known models which match the (partial) MODEL name",
@@ -199,7 +200,31 @@ def get_parser(default_config_files, git_root):
         "--map-tokens",
         type=int,
         default=None,
-        help="Max number of tokens to use for repo map, use 0 to disable (default: 1024)",
+        help="Suggested number of tokens to use for repo map, use 0 to disable (default: 1024)",
+    )
+    group.add_argument(
+        "--map-refresh",
+        choices=["auto", "always", "files", "manual"],
+        default="auto",
+        help="Control how often the repo map is refreshed (default: auto)",
+    )
+    group.add_argument(
+        "--cache-prompts",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable caching of prompts (default: False)",
+    )
+    group.add_argument(
+        "--cache-keepalive-pings",
+        type=int,
+        default=0,
+        help="Number of times to ping at 5min intervals to keep prompt cache warm (default: 0)",
+    )
+    group.add_argument(
+        "--map-multiplier-no-files",
+        type=float,
+        default=2,
+        help="Multiplier for map tokens when no files are specified (default: 2)",
     )
     group.add_argument(
         "--max-chat-history-tokens",
@@ -291,7 +316,12 @@ def get_parser(default_config_files, git_root):
     group.add_argument(
         "--tool-error-color",
         default="#FF2222",
-        help="Set the color for tool error messages (default: red)",
+        help="Set the color for tool error messages (default: #FF2222)",
+    )
+    group.add_argument(
+        "--tool-warning-color",
+        default="#FFA500",
+        help="Set the color for tool warning messages (default: #FFA500)",
     )
     group.add_argument(
         "--assistant-output-color",
@@ -462,6 +492,12 @@ def get_parser(default_config_files, git_root):
         help="Specify the language for voice using ISO 639-1 code (default: auto)",
     )
     group.add_argument(
+        "--chat-language",
+        metavar="CHAT_LANGUAGE",
+        default=None,
+        help="Specify the language to use in the chat (default: None, uses system settings)",
+    )
+    group.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
@@ -478,6 +514,19 @@ def get_parser(default_config_files, git_root):
         action=argparse.BooleanOptionalAction,
         help="Check for new aider versions on launch",
         default=True,
+    )
+    group.add_argument(
+        "--install-main-branch",
+        action="store_true",
+        help="Install the latest version from the main branch",
+        default=False,
+    )
+    group.add_argument(
+        "--upgrade",
+        "--update",
+        action="store_true",
+        help="Upgrade aider to the latest version from PyPI",
+        default=False,
     )
     group.add_argument(
         "--apply",
@@ -554,6 +603,12 @@ def get_parser(default_config_files, git_root):
         action="store_true",
         help="Run aider in your browser",
         default=False,
+    )
+    group.add_argument(
+        "--suggest-shell-commands",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable/disable suggesting shell commands (default: True)",
     )
 
     return parser

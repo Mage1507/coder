@@ -565,6 +565,9 @@ def run_test_real(
         use_git=False,
         stream=False,
         verbose=verbose,
+        # auto_lint=False,  # disabled for code-in-json experiments
+        cache_prompts=True,
+        suggest_shell_commands=False,
     )
     coder.max_apply_update_errors = max_apply_update_errors
 
