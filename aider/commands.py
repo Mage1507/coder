@@ -1257,20 +1257,6 @@ class Commands:
         if repo_map:
             self.io.tool_output("The repo map has been refreshed, use /map to view it.")
 
-    def cmd_report(self, args):
-        "Report a problem by opening a GitHub Issue"
-        from aider.report import report_github_issue
-
-        announcements = "\n".join(self.coder.get_announcements())
-        issue_text = announcements
-
-        if args.strip():
-            title = args.strip()
-        else:
-            title = None
-
-        report_github_issue(issue_text, title=title, confirm=False)
-
     def cmd_security_scan(self, args=None):
         "Running a security scan on the code file"
         self.io.tool_output("\nRunning security scan")
