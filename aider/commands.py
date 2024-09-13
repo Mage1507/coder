@@ -863,7 +863,7 @@ class Commands:
         if not callable(args):
             if type(args) is not str:
                 raise ValueError(repr(args))
-            return self.test_cmd_run(args, True)
+            return self.cmd_run(args, True)
 
         errors = args()
         if not errors:
@@ -873,10 +873,32 @@ class Commands:
         return errors
 
     # Changed the name of the function until the error is fixed (It is not removed since used by cmd_test)
-    def test_cmd_run(self, args, add_on_nonzero_exit=False):
+    def cmd_run(self, args, add_on_nonzero_exit=False):
         "Run a shell command and optionally add the output to the chat (alias: !)"
+        import shlex
+
+        tokens = shlex.split(args)
+        if not tokens:
+            self.io.tool_output("No command provided.")
+            return
+        if len(tokens) == 1:
+            # Only command is provided
+            command = tokens[0]
+            source_path = None
+        else:
+            # Assume last token is source_path, rest is command
+            source_path = tokens[-1]
+            command_tokens = tokens[:-1]
+            command = " ".join(command_tokens)
+
+        self.io.tool_output(f"Running command: {command}")
+        self.io.tool_output(f"Source path: {source_path}")
+
         exit_status, combined_output = run_cmd(
-            args, verbose=self.verbose, error_print=self.io.tool_error
+            command,
+            source_path=source_path,
+            verbose=self.verbose,
+            error_print=self.io.tool_error,
         )
         instructions = None
 

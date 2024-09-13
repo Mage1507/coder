@@ -8,9 +8,25 @@ import pexpect
 import psutil
 
 
-def run_cmd(command, verbose=False, error_print=None):
+def run_cmd(command, source_path=None, verbose=False, error_print=None):
     try:
-        if sys.stdin.isatty() and hasattr(pexpect, "spawn") and platform.system() != "Windows":
+        if source_path:
+            if not os.path.exists(source_path):
+                error_message = f"Source path '{source_path}' does not exist."
+                if error_print is None:
+                    print(error_message)
+                else:
+                    error_print(error_message)
+                return 1, error_message
+            else:
+                print("src path:", source_path)
+                os.chdir(source_path)
+
+        if (
+            sys.stdin.isatty()
+            and hasattr(pexpect, "spawn")
+            and platform.system() != "Windows"
+        ):
             return run_cmd_pexpect(command, verbose)
 
         return run_cmd_subprocess(command, verbose)
