@@ -1175,7 +1175,7 @@ class Coder:
             utils.show_messages(messages, functions=self.functions)
 
         self.multi_response_content = ""
-        self.mdstream=self.io.assistant_output("", self.stream)
+        self.mdstream = self.io.assistant_output("", self.stream)
 
         retry_delay = 0.125
 
@@ -1281,9 +1281,9 @@ class Coder:
         if self.reflected_message:
             return
 
-        if edited and self.security_scan:
+        if self.aider_edited_files and self.security_scan:
             self.files_to_scan = []
-            for fname in edited:
+            for fname in self.aider_edited_files:
                 abs_fname = self.abs_root_path(fname)
                 self.files_to_scan.append(abs_fname)
             self.commands.cmd_security_scan()
