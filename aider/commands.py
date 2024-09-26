@@ -1002,6 +1002,7 @@ class Commands:
             summarize_from_coder=False,
             map_tokens=512,
             map_mul_no_files=1,
+            suggest_shell_commands=False,
         )
         user_msg = self.help.ask(args)
         user_msg += """
@@ -1046,6 +1047,7 @@ class Commands:
             from_coder=self.coder,
             edit_format=edit_format,
             summarize_from_coder=False,
+            suggest_shell_commands=False,
         )
 
         user_msg = args
@@ -1277,6 +1279,7 @@ class Commands:
                 security_scan=False,
                 auto_commits=False,
                 auto_lint=False,
+                suggest_shell_commands=False,
             )
             coder.run(security_prompt)
             self.io.tool_output(f"\nScanning completed for {file}")
