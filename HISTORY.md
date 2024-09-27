@@ -1,6 +1,42 @@
 
 # Release history
 
+### main branch
+
+- [Use a pair of Architect/Editor models for improved coding](https://aider.chat/2024/09/26/senior-editor.html)
+  - Use a strong reasoning model like o1-preview as your Architect.
+  - Use a cheaper, faster model like gpt-4o as your Editor.
+- New `--o1-preview` and `--o1-mini` shortcuts.
+- New settings for completion menu colors, by @smh.
+- New `--voice-format` switch to send voice audio as wav/mp3/webm, by @mbailey.
+- Support for new Gemini 002 models.
+- Will now follow HTTP redirects when scraping urls.
+- Support for litellm's `extra_body` parameter, by @hypn4.
+- Support for cursor shapes when in vim mode.
+- Numerous bug fixes.
+
+### Aider v0.57.1
+
+- Fixed dependency conflict between aider-chat[help] and [playwright].
+
+### Aider v0.57.0
+
+- Support for OpenAI o1 models:
+  - o1-preview now works well with diff edit format.
+  - o1-preview with diff now matches SOTA leaderboard result with whole edit format.
+  - `aider --model o1-mini`
+  - `aider --model o1-preview`
+- On Windows, `/run` correctly uses PowerShell or cmd.exe.
+- Support for new 08-2024 Cohere models, by @jalammar.
+- Can now recursively add directories with `/read-only`.
+- User input prompts now fall back to simple `input()` if `--no-pretty` or a Windows console is not available.
+- Improved sanity check of git repo on startup.
+- Improvements to prompt cache chunking strategy.
+- Removed "No changes made to git tracked files".
+- Numerous bug fixes for corner case crashes.
+- Updated all dependency versions.
+- Aider wrote 70% of the code in this release.
+
 ### Aider v0.56.0
 
 - Enables prompt caching for Sonnet via OpenRouter by @fry69

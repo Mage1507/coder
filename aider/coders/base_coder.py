@@ -192,6 +192,13 @@ class Coder:
             output += ", infinite output"
         lines.append(output)
 
+        if self.edit_format == "architect":
+            output = (
+                f"Editor model: {main_model.editor_model.name} with"
+                f" {main_model.editor_edit_format} edit format"
+            )
+            lines.append(output)
+
         if weak_model is not main_model:
             output = f"Weak model: {weak_model.name}"
             lines.append(output)
@@ -516,9 +523,13 @@ class Coder:
             if content is not None:
                 all_content += content + "\n"
 
+        lines = all_content.splitlines()
         good = False
         for fence_open, fence_close in self.fences:
-            if fence_open in all_content or fence_close in all_content:
+            if any(
+                line.startswith(fence_open) or line.startswith(fence_close)
+                for line in lines
+            ):
                 continue
             good = True
             break
@@ -671,7 +682,7 @@ class Coder:
         if self.abs_fnames:
             files_content = self.gpt_prompts.files_content_prefix
             files_content += self.get_files_content()
-            files_reply = "Ok, any changes I propose will be to those files."
+            files_reply = self.gpt_prompts.files_content_assistant_reply
         elif self.get_repo_map() and self.gpt_prompts.files_no_full_files_with_repo_map:
             files_content = self.gpt_prompts.files_no_full_files_with_repo_map
             files_reply = self.gpt_prompts.files_no_full_files_with_repo_map_reply
@@ -1044,9 +1055,16 @@ class Coder:
 
         chunks = ChatChunks()
 
-        chunks.system = [
-            dict(role="system", content=main_sys),
-        ]
+        if self.main_model.use_system_prompt:
+            chunks.system = [
+                dict(role="system", content=main_sys),
+            ]
+        else:
+            chunks.system = [
+                dict(role="user", content=main_sys),
+                dict(role="assistant", content="Ok."),
+            ]
+
         chunks.examples = example_messages
 
         self.summarize_end()
@@ -1175,7 +1193,10 @@ class Coder:
             utils.show_messages(messages, functions=self.functions)
 
         self.multi_response_content = ""
-        self.mdstream = self.io.assistant_output("", self.stream)
+        if self.show_pretty() and self.stream:
+            self.mdstream = self.io.get_assistant_mdstream()
+        else:
+            self.mdstream = None
 
         retry_delay = 0.125
 
@@ -1263,6 +1284,7 @@ class Coder:
             self.cur_messages += [dict(role="assistant", content=content)]
             return
 
+        self.reply_completed()
         edited = self.apply_updates()
 
         self.update_cur_messages()
@@ -1322,6 +1344,9 @@ class Coder:
                 self.reflected_message += "\n\n" + add_rel_files_message
             else:
                 self.reflected_message = add_rel_files_message
+
+    def reply_completed(self):
+        pass
 
     def show_exhausted_error(self):
         output_tokens = 0
@@ -1482,6 +1507,11 @@ class Coder:
 
         self.io.log_llm_history("TO LLM", format_messages(messages))
 
+        if self.main_model.use_temperature:
+            temp = self.temperature
+        else:
+            temp = None
+
         completion = None
         try:
             hash_object, completion = send_completion(
@@ -1489,8 +1519,9 @@ class Coder:
                 messages,
                 functions,
                 self.stream,
-                self.temperature,
+                temp,
                 extra_headers=model.extra_headers,
+                extra_body=model.extra_body,
                 max_tokens=model.max_tokens,
             )
             self.chat_completion_call_hashes.append(hash_object.hexdigest())
@@ -1554,7 +1585,7 @@ class Coder:
             raise Exception("No data found in LLM response!")
 
         show_resp = self.render_incremental_response(True)
-        self.io.assistant_output(show_resp)
+        self.io.assistant_output(show_resp, pretty=self.show_pretty())
 
         if (
             hasattr(completion.choices[0], "finish_reason")
@@ -1984,7 +2015,6 @@ class Coder:
                     message=commit_message,
                 )
 
-            self.io.tool_output("No changes made to git tracked files.")
             return self.gpt_prompts.files_content_gpt_no_edits
         except ANY_GIT_ERROR as err:
             self.io.tool_error(f"Unable to commit: {str(err)}")

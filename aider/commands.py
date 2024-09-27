@@ -1088,7 +1088,7 @@ class Commands:
                 self.io.tool_error("To use /voice you must provide an OpenAI API key.")
                 return
             try:
-                self.voice = voice.Voice()
+                self.voice = voice.Voice(audio_format=self.args.voice_format)
             except voice.SoundDeviceError:
                 self.io.tool_error(
                     "Unable to import `sounddevice` and/or `soundfile`, is portaudio installed?"
@@ -1304,11 +1304,7 @@ def parse_quoted_filenames(args):
 
 
 def get_help_md():
-    from aider.coders import Coder
-    from aider.models import Model
-
-    coder = Coder(Model("gpt-3.5-turbo"), None)
-    md = coder.commands.get_help_md()
+    md = Commands(None, None).get_help_md()
     return md
 
 
