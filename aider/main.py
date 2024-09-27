@@ -31,7 +31,7 @@ def get_git_root():
     try:
         repo = git.Repo(search_parent_directories=True)
         return repo.working_tree_dir
-    except git.InvalidGitRepositoryError:
+    except (git.InvalidGitRepositoryError, FileNotFoundError):
         return None
 
 
@@ -266,7 +266,7 @@ def register_models(git_root, model_settings_fname, io, verbose=False):
     return None
 
 
-def load_dotenv_files(git_root, dotenv_fname):
+def load_dotenv_files(git_root, dotenv_fname, encoding="utf-8"):
     dotenv_files = generate_search_path_list(
         ".env",
         git_root,
@@ -274,9 +274,14 @@ def load_dotenv_files(git_root, dotenv_fname):
     )
     loaded = []
     for fname in dotenv_files:
-        if Path(fname).exists():
-            loaded.append(fname)
-            load_dotenv(fname, override=True)
+        try:
+            if Path(fname).exists():
+                load_dotenv(fname, override=True, encoding=encoding)
+                loaded.append(fname)
+        except OSError as e:
+            print(f"OSError loading {fname}: {e}")
+        except Exception as e:
+            print(f"Error loading {fname}: {e}")
     return loaded
 
 
@@ -300,6 +305,11 @@ def sanity_check_repo(repo, io):
     if not repo:
         return True
 
+    if not repo.repo.working_tree_dir:
+        io.tool_error("The git repo does not seem to have a working tree?")
+        return False
+
+    bad_ver = False
     try:
         repo.get_tracked_files()
         if not repo.git_repo_error:
@@ -360,7 +370,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     args, unknown = parser.parse_known_args(argv)
 
     # Load the .env file specified in the arguments
-    loaded_dotenvs = load_dotenv_files(git_root, args.env_file)
+    loaded_dotenvs = load_dotenv_files(git_root, args.env_file, args.encoding)
 
     # Parse again to include any arguments that might have been defined in .env
     args = parser.parse_args(argv)
@@ -368,8 +378,10 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     if not args.verify_ssl:
         import httpx
 
+        os.environ["SSL_VERIFY"] = ""
         litellm._load_litellm()
         litellm._lazy_module.client_session = httpx.Client(verify=False)
+        litellm._lazy_module.aclient_session = httpx.AsyncClient(verify=False)
 
     if args.dark_mode:
         args.user_input_color = "#32FF32"
@@ -401,6 +413,10 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             user_input_color=args.user_input_color,
             tool_output_color=args.tool_output_color,
             tool_error_color=args.tool_error_color,
+            completion_menu_color=args.completion_menu_color,
+            completion_menu_bg_color=args.completion_menu_bg_color,
+            completion_menu_current_color=args.completion_menu_current_color,
+            completion_menu_current_bg_color=args.completion_menu_current_bg_color,
             assistant_output_color=args.assistant_output_color,
             code_theme=args.code_theme,
             dry_run=args.dry_run,
@@ -517,7 +533,12 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         if os.environ.get("ANTHROPIC_API_KEY"):
             args.model = "claude-3-5-sonnet-20240620"
 
-    main_model = models.Model(args.model, weak_model=args.weak_model)
+    main_model = models.Model(
+        args.model,
+        weak_model=args.weak_model,
+        editor_model=args.editor_model,
+        editor_edit_format=args.editor_edit_format,
+    )
 
     if args.verbose:
         io.tool_output("Model info:")
@@ -571,6 +592,13 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     if args.cache_prompts and args.map_refresh == "auto":
         args.map_refresh = "files"
+
+    if not main_model.streaming:
+        if args.stream:
+            io.tool_warning(
+                "Warning: Streaming is not supported by the selected model. Disabling streaming."
+            )
+        args.stream = False
 
     try:
         coder = Coder.create(
