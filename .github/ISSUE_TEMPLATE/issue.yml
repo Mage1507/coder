@@ -2,30 +2,6 @@ name: Bug Report
 description: File a bug report
 labels: ["bug"]
 body:
-    - type: dropdown
-      id: provider
-      attributes:
-          label: Which API Provider are you using?
-          multiple: false
-          options:
-              - OpenRouter
-              - Anthropic
-              - Google Gemini
-              - GCP Vertex AI
-              - AWS Bedrock
-              - OpenAI
-              - OpenAI Compatible
-              - LM Studio
-              - Ollama
-      validations:
-          required: true
-    - type: input
-      id: model
-      attributes:
-          label: Which Model are you using?
-          description: Please specify the model you're using (e.g. Claude 3.5 Sonnet)
-      validations:
-          required: true
     - type: textarea
       id: what-happened
       attributes:
@@ -48,7 +24,7 @@ body:
     - type: textarea
       id: logs
       attributes:
-          label: Relevant API REQUEST output
+          label: Relevant cli output
           description: Please copy and paste any relevant output. This will be automatically formatted into code, so no need for backticks.
           render: shell
     - type: textarea
